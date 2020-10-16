@@ -68,5 +68,9 @@ pages/route.config，`/`路由配置文件：
 
 <b>
 本插件始终只作为生成路由映射表文件，除了noLazy，没有对路由配置的定义
-对映射表规则的解析需要自行定义，如重新封装react-router，在此我们已经提供了一套较为完善的解析组件[ux-autoroute](https://github.com/Hahahahx/ux-autoroute/),[在线 demo](https://hahahahx.github.io/ux-autoroute/)
+对映射表规则的解析需要自行定义，如重新封装react-router，在此我们已经提供了一套较为完善的解析组件
+
+[ux-autoroute](https://github.com/Hahahahx/ux-autoroute/)
+
+[在线 demo](https://hahahahx.github.io/ux-autoroute/)
 </b>
