@@ -1,3 +1,5 @@
+const fs = require("fs");
+const path = require("path");
 
 //递归遍历文件夹
 function getDir(srcAlias, dir, componentBase, staticRoute, routePath) {
