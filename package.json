@@ -1,23 +1,22 @@
 {
   "name": "ux-autoroute-plugin",
   "auther": {
-      "name": "ux"
+    "name": "ux"
   },
   "version": "1.0.0",
   "description": "自动路由",
   "repository": "https://github.com/Hahahahx/ux-autoroute-plugin",
   "main": "lib/index.js",
-  "keywords": ["react","react-router","自动路由","路由映射表","webpack","webpack-plugin"],
+  "keywords": [
+    "react",
+    "react-router",
+    "自动路由",
+    "路由映射表",
+    "webpack",
+    "webpack-plugin"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "license": "ISC",
-  "devDependencies": {
-    "@babel/cli": "^7.11.6",
-    "@babel/core": "^7.11.6",
-    "@babel/plugin-transform-runtime": "^7.11.5",
-    "@babel/preset-env": "^7.11.5",
-    "@babel/preset-typescript": "^7.10.4",
-    "core-js": "^3.6.5"
-  }
+  "license": "ISC"
 }
