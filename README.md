@@ -7,7 +7,6 @@ webpack 自动路由插件，该插件用于生成路由映射表文件,配套�
     new UxAutoRouterPlugin({
         pagePath: path.join(paths.appSrc, 'pages'),
         output: path.join(paths.appSrc, 'config'),
-        srcAlias:'@',            // 生成的文件内的src别名，需要与webpack配合，如果不加这个配置默认为src
         filename:'routerConfig.ts'
     })
 
@@ -16,7 +15,11 @@ webpack 自动路由插件，该插件用于生成路由映射表文件,配套�
 在 src 下读取 pages 文件夹，在 config 文件夹下，生成文件 routerConfig.ts：
 
 ```Javascript
-import Page from 'src/pages/index'; //配置srcAlias:'@'，就为'@/pages/index'
+//因为import是静态静态引入，所以无法使用变量将component传入做动态路由，只能在此处把整个方法作为动态传递;
+import loadable from '@loadable/component'; 
+//会根据当前的文件夹所在路径（node_modules/ux-autoroute-plugin）与pagePath生成相对路;
+import Page from './pages/index';  
+
 export const routeConfig = [
     {
         noLazy: true,
@@ -24,16 +27,23 @@ export const routeConfig = [
             {
                 default: true,
                 child: [],
-                componentPath: 'pages/login/index.tsx',
+                componentPath: loadable(
+                    function (){
+                        return import('../../../src/pages/login//login/index.tsx')
+                    }
+                ),   //会根据output与pagePath生成相对路径
                 path: '/login'
             },
             {
                 child: [],
-                componentPath: 'pages/main/index.tsx',
+                componentPath:loadable(
+                    function (){
+                        return import('../../../src/pages//index.tsx')
+                    }
+                ),
                 path: '/main'
             }
         ],
-        componentPath: 'pages/index.tsx',
         path: '',
         component: Page
     }
