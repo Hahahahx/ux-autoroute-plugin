@@ -18,5 +18,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "dependencies": {
+    "@loadable/component": "5.13.2",
+    "@types/loadable__component": "5.13.1"
+  },
   "license": "ISC"
 }
