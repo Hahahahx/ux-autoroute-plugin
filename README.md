@@ -20,7 +20,7 @@ import loadable from '@loadable/component';
 //会根据当前的文件夹所在路径（node_modules/ux-autoroute-plugin）与pagePath生成相对路;
 import Page from './pages/index';  
 
-export const routeConfig = [
+const router = [
     {
         noLazy: true,
         child: [
@@ -48,6 +48,8 @@ export const routeConfig = [
         component: Page
     }
 ]
+
+export default router
 ```
 
 路由要求所有路由文件夹都是 `小写且不含特殊字符` ，且文件夹内必须有 index.jsx|index.tsx 为该路由的路由组件。
@@ -77,7 +79,7 @@ pages/route.config，`/`路由配置文件：
 --------------------------------------
 
 <b>
-本插件始终只作为生成路由映射表文件，除了noLazy，没有对路由配置的定义
+本插件始终只作为生成路由映射表文件，除了noLazy（因为需用其来判断是否需要import和loadable），没有对路由配置的定义
 对映射表规则的解析需要自行定义，如重新封装react-router，在此我们已经提供了一套较为完善的解析组件
 
 [ux-autoroute](https://github.com/Hahahahx/ux-autoroute/)
