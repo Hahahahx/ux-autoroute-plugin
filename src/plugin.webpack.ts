@@ -41,7 +41,7 @@ export class AutoRouterWebPackPlugin {
     }
 
     buildRouter() {
-        const parse_exe = path.join(__dirname, "..", "parse.exe");
+        const parse_exe = path.join(__dirname,  "parse.exe");
         process.exec(
             `${parse_exe} parse -o ${this.output} -r ${this.pagePath} -n ${this.filename}`,
             (err:any, stdout:any, stderr:any) => {
