@@ -5,12 +5,12 @@
     "noImplicitAny": true,
     "moduleResolution": "node",
     // "sourceMap": true,
-    "outDir": "../lib",
-    "baseUrl": ".",
+    "outDir": "lib",
+    "baseUrl": "src",
     "paths": {
-      "*": ["../node_modules/*", "../types/*"]
+      "*": ["node_modules/*", "types/*"]
     }
   },
   "include": ["**/*"],
-  "exclude": ["../node_modules"]
+  "exclude": ["node_modules"]
 }
