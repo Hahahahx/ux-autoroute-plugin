@@ -3,7 +3,7 @@ declare module "ux-autoroute-plugin" {
     constructor(params: PluginParams);
   }
 
-  export function AutoRouterVitePlugin(params: PluginParams);
+  export function AutoRouterVitePlugin(params: PluginParams): any;
 
   interface RouteConfig {
     component: string;
