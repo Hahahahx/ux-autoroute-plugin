@@ -24,7 +24,7 @@ var (
 )
 
 //获取指定目录下的所有文件和目录
-func RecursionFile(outputPath, dirPath, routePath string) Router {
+func RecursionFile(outputPath, dirPath, routePath string, lazyImport bool) Router {
 	files, err := ioutil.ReadDir(dirPath)
 	HandleError(err, "文件夹："+dirPath+"打开失败")
 
@@ -34,7 +34,8 @@ func RecursionFile(outputPath, dirPath, routePath string) Router {
 	)
 
 	for _, fi := range files {
-		handleConfigFile(fi, outputPath, dirPath, routePath, &router)
+		// 处理config文件
+		handleConfigFile(fi, outputPath, dirPath, routePath, &router, lazyImport)
 		handleIndexFile(fi, outputPath, dirPath, routePath, &router)
 		if fi.IsDir() { // 目录, 递归遍历
 			child = append(child, strings.ReplaceAll(filepath.Join(dirPath, fi.Name()), "\\", "/"))
@@ -44,7 +45,7 @@ func RecursionFile(outputPath, dirPath, routePath string) Router {
 	// PrintStruct(router)
 
 	for _, dir := range child {
-		childRouter := RecursionFile(outputPath, dir, routePath+"/"+filepath.Base(dir))
+		childRouter := RecursionFile(outputPath, dir, routePath+"/"+filepath.Base(dir), lazyImport)
 		router.Child = append(router.Child, childRouter)
 	}
 
@@ -52,7 +53,7 @@ func RecursionFile(outputPath, dirPath, routePath string) Router {
 }
 
 // 处理配置文件
-func handleConfigFile(file os.FileInfo, outputPath, dirPath, routePath string, router *Router) {
+func handleConfigFile(file os.FileInfo, outputPath, dirPath, routePath string, router *Router, lazyImport bool) {
 
 	if filepath.Base(file.Name()) == "route.config" {
 		// abs, err := filepath.Abs()
@@ -66,22 +67,44 @@ func handleConfigFile(file os.FileInfo, outputPath, dirPath, routePath string, r
 		var result map[string]interface{}
 		json.Unmarshal([]byte(byteValue), &result)
 		router.Config = result
-		noLazy, ok := result["noLazy"]
 
-		// 判断是否存在noLazy字段
-		if ok {
-			// 判断是否是bool类型
-			noLazy, ok := noLazy.(bool)
-			if !ok {
-				HandleError(errors.New("err"), "错误的字段类型，noLazy必须bool类型")
+		// 默认配置按需加载
+		if lazyImport {
+			noLazy, ok := result["noLazy"]
+
+			// 判断是否存在noLazy字段
+			if ok {
+				// 判断是否是bool类型
+				noLazy, ok := noLazy.(bool)
+				if !ok {
+					HandleError(errors.New("err"), "错误的字段类型，noLazy必须bool类型")
+				}
+				// 静态导入组件
+				if noLazy {
+					reletivePath, err := getRelativePath(outputPath, dirPath)
+					HandleError(err, "获取文件"+dirPath+"相对路径失败")
+					router.Component = "Page" + titleCase(routePath)
+					ImportRoute = append(ImportRoute, "import Page"+titleCase(routePath)+" from '"+reletivePath+"/index';")
+				}
 			}
-			if noLazy {
-				// 使用绝对路径的方式引入组件
-				reletivePath, err := getRelativePath(outputPath, dirPath)
-				HandleError(err, "获取文件"+dirPath+"相对路径失败")
-				router.Component = "Page" + titleCase(routePath)
-				ImportRoute = append(ImportRoute, "import Page"+titleCase(routePath)+" from '"+reletivePath+"/index';")
+		} else {
+			lazy, ok := result["lazy"]
+			// 判断是否存在lazy字段
+			if ok {
+				// 判断是否是bool类型
+				lazy, ok := lazy.(bool)
+				if !ok {
+					HandleError(errors.New("err"), "错误的字段类型，lazy必须bool类型")
+				}
+				// 如果是需要按需加载则交给后面的流程来处理
+				if lazy {
+					return
+				}
 			}
+			reletivePath, err := getRelativePath(outputPath, dirPath)
+			HandleError(err, "获取文件"+dirPath+"相对路径失败")
+			router.Component = "Page" + titleCase(routePath)
+			ImportRoute = append(ImportRoute, "import Page"+titleCase(routePath)+" from '"+reletivePath+"/index';")
 		}
 		HandleError(err, "读取文件内容失败")
 	}

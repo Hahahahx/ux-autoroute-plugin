@@ -12,8 +12,13 @@ declare module "ux-autoroute-plugin" {
   }
 
   interface PluginParams {
+    // 输入路径
     pagePath: string;
+    // 输出路径
     output: string;
+    // 输出文件名
     filename: string;
+    // 默认关闭按需加载import
+    defaultLazyImport: boolean;
   }
 }

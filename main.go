@@ -44,37 +44,48 @@ func main() {
 					recursion = strings.ReplaceAll(recursion, "\\", "/")
 					parse.PathExistsIsDir(recursion)
 					filename := c.String("n")
+					lazyImport := c.Bool("i")
 
-					f, err := ioutil.ReadFile(filepath.Join(output, filename))
+					// 先读取文件，用于判断路由信息是否发生变化，是否需要重新写入
+					f, _ := ioutil.ReadFile(filepath.Join(output, filename))
 
-					router := parse.RecursionFile(output, recursion, "")
+					// 解析路由
+					router := parse.RecursionFile(output, recursion, "", lazyImport)
 
 					var routers []parse.Router
 
+					// 尽管路由始终是从/开始的
+					// 但为了便于前端递归遍历路由表
+					// 那么路由对象也应该是一个数组
 					routeJson, err := json.Marshal(append(routers, router))
 					parse.HandleError(err, "解析JSON出错")
 
+					// 导入loadable按需加载
 					parse.ImportRoute = append(parse.ImportRoute, "import loadable from '@loadable/component';\n")
 
+					// 将数据写入buffer
 					var out bytes.Buffer
 					for _, importString := range parse.ImportRoute {
 						// _, err = fmt.Fprintln(file, importString)
 						_, err := out.WriteString(importString + "\n")
 						parse.HandleError(err, "写入数据出错:"+importString)
 					}
-
+					// 构建router对象
 					out.WriteString("const router=")
-
+					// 将json格式化输出到buffer
 					err = json.Indent(&out, routeJson, "", "\t")
-
 					parse.HandleError(err, "格式化JSON出错")
 
-					out.WriteString("\n\nexport default router")
+					// 导出router对象
+					out.WriteString("\n\nexport default router;")
 
+					// json对象写出去的时候是带有双引号
+					// 但是js文件里是不应该是字符串的
+					// 所以把所有的双引号删除
 					finalRes := strings.ReplaceAll(out.String(), "\"", "")
-
 					parse.HandleError(err, "读取信息失败")
 
+					// 判断路由是否发生改变
 					if finalRes != string(f) {
 						file, err := os.OpenFile(filepath.Join(output, filename), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 						parse.HandleError(err, "创建文件"+filename+"出错")
@@ -104,7 +115,13 @@ func main() {
 						Name:    "filename",
 						Value:   "router.js",
 						Aliases: []string{"n"},
-						Usage:   "recursion path",
+						Usage:   "generate filename of router map table",
+					},
+					&cli.BoolFlag{
+						Name:    "lazyImport",
+						Value:   false,
+						Aliases: []string{"i"},
+						Usage:   "default lazy import compoennt",
 					},
 				},
 			},

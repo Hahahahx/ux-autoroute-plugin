@@ -16,7 +16,9 @@ export function AutoRouterVitePlugin(params: UxPlugin.PluginParams) {
 function buildRouter(params: UxPlugin.PluginParams) {
   const parse_exe = path.join(__dirname, "..", "parse.exe");
   process.exec(
-    `${parse_exe} parse -o ${params.output} -r ${params.pagePath} -n ${params.filename}`,
+    `${parse_exe} parse -o ${params.output} -r ${params.pagePath} -n ${
+      params.filename
+    } ${!!params.defaultLazyImport ? "-i" : ""}`,
     (err: any, stdout: any, stderr: any) => {
       // console.log(stdout);
     }
