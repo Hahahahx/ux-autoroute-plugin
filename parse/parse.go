@@ -81,10 +81,8 @@ func handleConfigFile(file os.FileInfo, outputPath, dirPath, routePath string, r
 				}
 				// 静态导入组件
 				if noLazy {
-					reletivePath, err := getRelativePath(outputPath, dirPath)
 					HandleError(err, "获取文件"+dirPath+"相对路径失败")
 					router.Component = "Page" + titleCase(routePath)
-					ImportRoute = append(ImportRoute, "import Page"+titleCase(routePath)+" from '"+reletivePath+"/index';")
 				}
 			}
 		} else {
@@ -101,10 +99,8 @@ func handleConfigFile(file os.FileInfo, outputPath, dirPath, routePath string, r
 					return
 				}
 			}
-			reletivePath, err := getRelativePath(outputPath, dirPath)
 			HandleError(err, "获取文件"+dirPath+"相对路径失败")
 			router.Component = "Page" + titleCase(routePath)
-			ImportRoute = append(ImportRoute, "import Page"+titleCase(routePath)+" from '"+reletivePath+"/index';")
 		}
 		HandleError(err, "读取文件内容失败")
 	}
