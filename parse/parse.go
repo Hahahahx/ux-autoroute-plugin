@@ -36,7 +36,7 @@ func RecursionFile(outputPath, dirPath, routePath string, lazyImport bool) Route
 	for _, fi := range files {
 		// 处理config文件
 		handleConfigFile(fi, outputPath, dirPath, routePath, &router, lazyImport)
-		handleIndexFile(fi, outputPath, dirPath, routePath, &router)
+		handleIndexFile(fi, outputPath, dirPath, routePath, &router, lazyImport)
 		if fi.IsDir() { // 目录, 递归遍历
 			child = append(child, strings.ReplaceAll(filepath.Join(dirPath, fi.Name()), "\\", "/"))
 		}
@@ -111,7 +111,7 @@ func handleConfigFile(file os.FileInfo, outputPath, dirPath, routePath string, r
 }
 
 // 处理组件
-func handleIndexFile(file os.FileInfo, outputPath, dirPath, routePath string, router *Router) {
+func handleIndexFile(file os.FileInfo, outputPath, dirPath, routePath string, router *Router, lazyImport bool) {
 
 	// fullName := filepath.Base(dirPath)
 	// extionName := filepath.Ext(fullName
@@ -119,9 +119,19 @@ func handleIndexFile(file os.FileInfo, outputPath, dirPath, routePath string, ro
 
 	if file.Name() == "index.jsx" || file.Name() == "index.tsx" {
 		if router.Component == "" {
-			reletivePath, err := getRelativePath(outputPath, dirPath)
-			HandleError(err, "获取文件"+dirPath+"相对路径失败")
-			router.Component = "loadable(function(){return import('" + reletivePath + "')})"
+
+			if lazyImport {
+
+				reletivePath, err := getRelativePath(outputPath, dirPath)
+				HandleError(err, "获取文件"+dirPath+"相对路径失败")
+				router.Component = "loadable(function(){return import('" + reletivePath + "')})"
+			} else {
+
+				reletivePath, err := getRelativePath(outputPath, dirPath)
+				HandleError(err, "获取文件"+dirPath+"相对路径失败")
+				router.Component = "Page" + titleCase(routePath)
+				ImportRoute = append(ImportRoute, "import Page"+titleCase(routePath)+" from '"+reletivePath+"/index';")
+			}
 		}
 
 		router.Path = "'" + routePath + "'"

@@ -7,6 +7,7 @@
   "description": "自动路由",
   "repository": "https://github.com/Hahahahx/ux-autoroute-plugin",
   "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "keywords": [
     "react",
     "react-router",

@@ -19,6 +19,6 @@ declare namespace UxPlugin {
     // 输出文件名
     filename: string;
     // 默认关闭按需加载import
-    defaultLazyImport: boolean;
+    defaultLazyImport?: boolean;
   }
 }
