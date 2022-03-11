@@ -121,6 +121,7 @@ func handleIndexFile(file os.FileInfo, outputPath, dirPath, routePath string, ro
 				reletivePath, err := getRelativePath(outputPath, dirPath)
 				HandleError(err, "获取文件"+dirPath+"相对路径失败")
 				router.Component = "loadable(function(){return import('" + reletivePath + "')})"
+				ImportRoute = append(ImportRoute, "import Page"+titleCase(routePath)+" from '"+reletivePath+"/index';")
 			} else {
 
 				reletivePath, err := getRelativePath(outputPath, dirPath)
