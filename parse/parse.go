@@ -17,7 +17,7 @@ type Router struct {
 	Component string      `json:"element"`
 	Path      string      `json:"path"`
 	Index     bool        `json:"index"`
-	Child     []Router    `json:"children"`
+	Child     []Router    `json:"child"`
 }
 
 var (
@@ -36,7 +36,7 @@ func RecursionFile(outputPath, dirPath, routePath string, lazyImport bool) Route
 
 	for _, fi := range files {
 		// 处理config文件
-		handleConfigFile(fi, outputPath, dirPath, routePath, &router, lazyImport)
+		// handleConfigFile(fi, outputPath, dirPath, routePath, &router, lazyImport)
 		// 处理Index页面组件
 		handleIndexFile(fi, outputPath, dirPath, routePath, &router, lazyImport)
 		if fi.IsDir() { // 目录, 递归遍历
