@@ -16,6 +16,7 @@ type Router struct {
 	Config    interface{} `json:"config"`
 	Component string      `json:"element"`
 	Path      string      `json:"path"`
+	Index     bool        `json:"index"`
 	Child     []Router    `json:"children"`
 }
 
@@ -60,6 +61,7 @@ func RecursionFile(outputPath, dirPath, routePath string, lazyImport bool) Route
 		baseDir := filepath.Base(dir)
 		if isDefault(baseDir) {
 			baseDir = baseDir[1:]
+			router.Index = true
 		}
 		childRouter := RecursionFile(outputPath, dir, routePath+"/"+baseDir, lazyImport)
 		router.Child = append(router.Child, childRouter)
