@@ -17,9 +17,21 @@ func titleCase(name string) string {
 	return convertHump(name, "/")
 }
 
-// 校验是否是路由，规则很简单，只需要a-z的组成即可
-func isRoute(name string) bool {
-	r, _ := regexp.Compile("^[a-z]+$")
+// 校验是否是路由，并返回对应匹配到的字符串，规则很简单 a-z的字符串，后续可以跟冒号字段，或者只有冒号字段
+func isRoute(name string) (string, bool) {
+	r, _ := regexp.Compile("([a-z]+)?(:[a-z]+)?")
+	res := r.FindStringSubmatch(name)
+
+	if len(res) > 0 {
+		return res[0], true
+	} else {
+		return "", false
+	}
+}
+
+// 校验是否是默认路由，规则以感叹号起始
+func isDefault(name string) bool {
+	r, _ := regexp.Compile("^!")
 	return r.MatchString(name)
 }
 

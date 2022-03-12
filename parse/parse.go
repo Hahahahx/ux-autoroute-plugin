@@ -14,9 +14,9 @@ import (
 
 type Router struct {
 	Config    interface{} `json:"config"`
-	Component string      `json:"component"`
+	Component string      `json:"element"`
 	Path      string      `json:"path"`
-	Child     []Router    `json:"child"`
+	Child     []Router    `json:"children"`
 }
 
 var (
@@ -36,16 +36,32 @@ func RecursionFile(outputPath, dirPath, routePath string, lazyImport bool) Route
 	for _, fi := range files {
 		// 处理config文件
 		handleConfigFile(fi, outputPath, dirPath, routePath, &router, lazyImport)
+		// 处理Index页面组件
 		handleIndexFile(fi, outputPath, dirPath, routePath, &router, lazyImport)
 		if fi.IsDir() { // 目录, 递归遍历
-			child = append(child, strings.ReplaceAll(filepath.Join(dirPath, fi.Name()), "\\", "/"))
+
+			name := fi.Name()
+
+			if isDefault(name) {
+				name = name[1:]
+			}
+			_, result := isRoute(name)
+			if result {
+				child = append(child, strings.ReplaceAll(filepath.Join(dirPath, fi.Name()), "\\", "/"))
+			}
 		}
 	}
 
 	// PrintStruct(router)
 
 	for _, dir := range child {
-		childRouter := RecursionFile(outputPath, dir, routePath+"/"+filepath.Base(dir), lazyImport)
+
+		// 默认路由的话是以感叹号起始的，作为组件名时应该删除该感叹号
+		baseDir := filepath.Base(dir)
+		if isDefault(baseDir) {
+			baseDir = baseDir[1:]
+		}
+		childRouter := RecursionFile(outputPath, dir, routePath+"/"+baseDir, lazyImport)
 		router.Child = append(router.Child, childRouter)
 	}
 
