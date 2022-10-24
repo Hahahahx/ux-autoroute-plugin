@@ -55,7 +55,7 @@ func Parse(
 
 	router.Component = "Page"
 
-	var Import = []string{lazyImport}
+	var Import = []string{"/* eslint-disable */", "// @ts-nocheck", lazyImport}
 	Import = append(Import, ImportComponent(router.Component, router.RelativePath))
 	router.Handles = router.Component + "Handles.handles"
 	Import = append(Import, ImportComponentHandles(router.Component+"Handles", router.RelativePath))
