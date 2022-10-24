@@ -71,3 +71,19 @@ func PrintStruct(item interface{}) {
 	HandleError(err, "解析struct失败")
 	out.WriteTo(os.Stdout)
 }
+
+func ToJavaScriptString(str string) string {
+	return "'" + str + "'"
+}
+
+func ImportLazyComponent(component, path string) string {
+	return "const " + component + " = lazy(() => import(" + path + "));"
+}
+
+func ImportComponent(component, path string) string {
+	return "import " + component + " from " + path + ";"
+}
+
+func ImportComponentHandles(component, path string) string {
+	return "import * as" + component + " from " + path + ";"
+}

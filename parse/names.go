@@ -65,6 +65,7 @@ func convertHump(str string, flag string) string {
 		str = str[:index] + strings.ToUpper(string(str[index+1])) + str[index+replaceCount+1:]
 
 	}
+
 	return str
 }
 
@@ -78,4 +79,11 @@ func verifyBase(exg string) func(name string) (string, bool) {
 			return name, false
 		}
 	}
+}
+
+func FirstUpper(s string) string {
+	if s == "" {
+		return ""
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
 }

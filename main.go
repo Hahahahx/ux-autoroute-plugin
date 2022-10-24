@@ -49,31 +49,10 @@ func main() {
 					// 先读取文件，用于判断路由信息是否发生变化，是否需要重新写入
 					f, _ := ioutil.ReadFile(filepath.Join(output, filename))
 
-					var router parse.Router
-					router.Recursion = true
-					// windows下文件路径可能会出现\\将其替换，统一为/
-					router.RealPath = filename
-					router.PathName = ""
-					router.Path = "/"
-					router.RelativePath, _ = parse.GetRelativePath(output, recursion)
+					routers, Import := parse.Parse(output, recursion, lazyImport)
 
-					router.Component = "Page"
-					var Import []string
-					Import = append(Import, "import "+router.Component+" from "+router.RelativePath)
-
-					// 解析路由
-					router.Child = parse.RecursionFile(router, Import)
-
-					var routers []parse.Router
-
-					// 尽管路由始终是从/开始的
-					// 但为了便于前端递归遍历路由表
-					// 那么路由对象也应该是一个数组
-					routeJson, err := json.Marshal(append(routers, router))
+					routeJson, err := json.Marshal(routers)
 					parse.HandleError(err, "解析JSON出错")
-
-					// 导入loadable按需加载
-					Import = append(Import, lazyImport+"\n")
 
 					// 将数据写入buffer
 					var out bytes.Buffer
@@ -95,6 +74,7 @@ func main() {
 					// 但是js文件里是不应该是字符串的
 					// 所以把所有的双引号删除
 					finalRes := strings.ReplaceAll(out.String(), "\"", "")
+					// finalRes := out.String()
 					parse.HandleError(err, "读取信息失败")
 
 					// 判断路由是否发生改变
@@ -129,7 +109,7 @@ func main() {
 						Aliases: []string{"n"},
 						Usage:   "generate filename of router map table",
 					},
-					&cli.BoolFlag{
+					&cli.StringFlag{
 						Required: true,
 						Name:     "lazyImport",
 						Aliases:  []string{"i"},

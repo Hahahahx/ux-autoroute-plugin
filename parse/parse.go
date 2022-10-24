@@ -4,25 +4,68 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path"
-	"path/filepath"
 	"strings"
 
 	"github.com/fatih/color"
 )
 
 type Router struct {
-	Component     string `json:"element"`
-	RelativePath  string `json:relativepath`
-	RealPath      string `json:realpath`
-	ComponentPath string `json:componentpath`
-	Path          string `json:"path"`
-	PathName      string `json:"pathName"`
-	Index         bool   `json:"index"`
-	Lazy          bool   `json:lazy`
-	Param         bool   `json:param`
-	Recursion     bool   `json:recursion`
+	Component    string `json:"element"`
+	Handle       string `json:"handle"`
+	RelativePath string `json:"relative"`
+	AbsolutePath string `json:"absolute"`
+	Path         string `json:"path"`
+	PathName     string `json:"pathName"`
+	Index        bool   `json:"index"`
+	Lazy         bool   `json:"lazy"`
+	Param        bool   `json:"param"`
+	Recursion    bool   `json:"recursion"`
+
+	// 内部使用
+	relative string
+	absolute string
+	path     string
+	pathName string
 
 	Child []Router `json:"child"`
+}
+
+func (r *Router) ToJavaScriptString() {
+	r.RelativePath = ToJavaScriptString(r.relative)
+	r.AbsolutePath = ToJavaScriptString(r.absolute)
+	r.Path = ToJavaScriptString(r.path)
+	r.PathName = ToJavaScriptString(r.pathName)
+}
+
+func Parse(
+	output,
+	recursion,
+	lazyImport string,
+) ([]Router, []string) {
+
+	var router Router
+	router.Recursion = true
+	// windows下文件路径可能会出现\\将其替换，统一为/
+	router.absolute = recursion
+	router.relative, _ = GetRelativePath(output, recursion)
+	router.pathName = ""
+	router.path = ""
+	router.ToJavaScriptString()
+	router.Path = ToJavaScriptString("/")
+
+	router.Component = "Page"
+
+	var Import = []string{lazyImport}
+	Import = append(Import, ImportComponent(router.Component, router.RelativePath))
+	Import = append(Import, ImportComponentHandles(router.Component, router.RelativePath))
+
+	// 解析路由
+	router.Child, Import = RecursionFile(router, Import)
+
+	Import = append(Import, "\n\n")
+
+	routers := []Router{router}
+	return routers, Import
 }
 
 // 获取指定目录下的所有文件和目录
@@ -30,10 +73,10 @@ type Router struct {
 // RelativePath 相对路径，相对于文件输出目录的路径，即router.ts到pages的路径
 // Father 父级路由
 // Import 导入的文件路径
-func RecursionFile(Father Router, Import []string) []Router {
-	files, err := ioutil.ReadDir(Father.RealPath)
+func RecursionFile(Father Router, Import []string) ([]Router, []string) {
+	files, err := ioutil.ReadDir(Father.absolute)
 
-	HandleError(err, "文件夹："+Father.RealPath+"打开失败")
+	HandleError(err, "文件夹："+Father.absolute+"打开失败")
 
 	var (
 		router Router
@@ -43,15 +86,17 @@ func RecursionFile(Father Router, Import []string) []Router {
 	for _, fi := range files {
 
 		filename := path.Base(fi.Name())
+
 		//获取文件后缀
 		ext := path.Ext(filename)
 
-		if !isRouteFile(ext) {
+		if !fi.IsDir() && !isRouteFile(ext) {
 			continue
 		}
+		base := strings.TrimSuffix(filename, ext)
 
 		//获取文件名
-		name := strings.TrimSuffix(filename, ext)
+		name := base
 		name, router.Lazy = isLazy(name)
 		name, router.Param = isParam(name)
 		name, router.Index = isIndex(name)
@@ -63,31 +108,40 @@ func RecursionFile(Father Router, Import []string) []Router {
 		}
 
 		if result {
+			router.Component = Father.Component + FirstUpper(name)
 			router.Recursion = fi.IsDir()
-			// windows下文件路径可能会出现\\将其替换，统一为/
-			router.RealPath = filepath.Join(Father.RealPath, fi.Name())
-			router.PathName = name
-			router.Path = Father.Path + "/" + name
-			router.RelativePath = filepath.Join(Father.RelativePath, name)
-
-			if router.Lazy {
-				router.Component = "lazy(() => import('" + router.RelativePath + "'))"
-			} else {
-				router.Component = "Page" + titleCase(router.Path)
-				Import = append(Import, "import "+router.Component+" from "+router.RelativePath)
+			if router.Param {
+				name = ":" + name
 			}
+
+			router.pathName = name
+			router.path = Father.path + "/" + name
+
+			// 相对路径可以不加后缀，即省略tsx,jsx等
+			router.relative = Father.relative + "/" + base
+			// 绝对路径使用全名称
+			router.absolute = Father.absolute + "/" + filename
+			router.ToJavaScriptString()
+			if router.Lazy {
+				Import = append(Import, ImportLazyComponent(router.Component, router.RelativePath))
+			} else {
+				Import = append(Import, ImportComponent(router.Component, router.RelativePath))
+			}
+
+			router.Handle = router.Component + "Handles.handles"
+			Import = append(Import, ImportComponentHandles(router.Component+"Handles", router.RelativePath))
 
 			childs = append(childs, router)
 		}
 	}
 
-	for _, child := range childs {
+	for index, child := range childs {
 		if child.Recursion {
-			child.Child = RecursionFile(child, Import)
+			childs[index].Child, Import = RecursionFile(child, Import)
 		}
 	}
 
-	return childs
+	return childs, Import
 }
 
 // 处理错误
