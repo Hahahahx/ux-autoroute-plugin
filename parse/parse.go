@@ -1,11 +1,9 @@
 package parse
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -13,144 +11,83 @@ import (
 )
 
 type Router struct {
-	Config    interface{} `json:"config"`
-	Component string      `json:"element"`
-	Path      string      `json:"path"`
-	Index     bool        `json:"index"`
-	Child     []Router    `json:"child"`
+	Component     string `json:"element"`
+	RelativePath  string `json:relativepath`
+	RealPath      string `json:realpath`
+	ComponentPath string `json:componentpath`
+	Path          string `json:"path"`
+	PathName      string `json:"pathName"`
+	Index         bool   `json:"index"`
+	Lazy          bool   `json:lazy`
+	Param         bool   `json:param`
+	Recursion     bool   `json:recursion`
+
+	Child []Router `json:"child"`
 }
 
-var (
-	ImportRoute []string
-)
+// 获取指定目录下的所有文件和目录
+// AbsolutePath 绝对路径，即文件夹位置
+// RelativePath 相对路径，相对于文件输出目录的路径，即router.ts到pages的路径
+// Father 父级路由
+// Import 导入的文件路径
+func RecursionFile(Father Router, Import []string) []Router {
+	files, err := ioutil.ReadDir(Father.RealPath)
 
-//获取指定目录下的所有文件和目录
-func RecursionFile(outputPath, dirPath, routePath string, lazyImport bool) Router {
-	files, err := ioutil.ReadDir(dirPath)
-	HandleError(err, "文件夹："+dirPath+"打开失败")
+	HandleError(err, "文件夹："+Father.RealPath+"打开失败")
 
 	var (
 		router Router
-		child  []string
+		childs []Router
 	)
 
 	for _, fi := range files {
-		// 处理config文件
-		// handleConfigFile(fi, outputPath, dirPath, routePath, &router, lazyImport)
-		// 处理Index页面组件
-		handleIndexFile(fi, outputPath, dirPath, routePath, &router, lazyImport)
-		if fi.IsDir() { // 目录, 递归遍历
 
-			name := fi.Name()
+		filename := path.Base(fi.Name())
+		//获取文件后缀
+		ext := path.Ext(filename)
 
-			if isDefault(name) {
-				name = name[1:]
-			}
-			_, result := isRoute(name)
-			if result {
-				child = append(child, strings.ReplaceAll(filepath.Join(dirPath, fi.Name()), "\\", "/"))
-			}
+		if !isRouteFile(ext) {
+			continue
 		}
-	}
 
-	// PrintStruct(router)
+		//获取文件名
+		name := strings.TrimSuffix(filename, ext)
+		name, router.Lazy = isLazy(name)
+		name, router.Param = isParam(name)
+		name, router.Index = isIndex(name)
+		name, result := isRoute(name)
 
-	for _, dir := range child {
-
-		// 默认路由的话是以感叹号起始的，作为组件名时应该删除该感叹号
-		baseDir := filepath.Base(dir)
-		if isDefault(baseDir) {
-			baseDir = baseDir[1:]
-			router.Index = true
+		// 如果是index文件，那么其不做当前的路由，而作为父级文件夹的路由组件
+		if name == "index" {
+			result = false
 		}
-		childRouter := RecursionFile(outputPath, dir, routePath+"/"+baseDir, lazyImport)
-		router.Child = append(router.Child, childRouter)
-	}
 
-	return router
-}
+		if result {
+			router.Recursion = fi.IsDir()
+			// windows下文件路径可能会出现\\将其替换，统一为/
+			router.RealPath = filepath.Join(Father.RealPath, fi.Name())
+			router.PathName = name
+			router.Path = Father.Path + "/" + name
+			router.RelativePath = filepath.Join(Father.RelativePath, name)
 
-// 处理配置文件
-func handleConfigFile(file os.FileInfo, outputPath, dirPath, routePath string, router *Router, lazyImport bool) {
-
-	if filepath.Base(file.Name()) == "route.config" {
-		// abs, err := filepath.Abs()
-		// fmt.Println(abs)
-		// jsonFile, err := os.Open(filepath.Join(dirPath, file.Name()))
-		// HandleError(err, "读取JSON文件失败")
-		// defer jsonFile.Close()
-		byteValue, err := ioutil.ReadFile(filepath.Join(dirPath, file.Name()))
-		HandleError(err, "读取JSON失败")
-		// fmt.Println(string(byteValue))
-		var result map[string]interface{}
-		json.Unmarshal([]byte(byteValue), &result)
-		router.Config = result
-
-		// 默认配置按需加载
-		if lazyImport {
-			noLazy, ok := result["noLazy"]
-
-			// 判断是否存在noLazy字段
-			if ok {
-				// 判断是否是bool类型
-				noLazy, ok := noLazy.(bool)
-				if !ok {
-					HandleError(errors.New("err"), "错误的字段类型，noLazy必须bool类型")
-				}
-				// 静态导入组件
-				if noLazy {
-					HandleError(err, "获取文件"+dirPath+"相对路径失败")
-					router.Component = "Page" + titleCase(routePath)
-				}
-			}
-		} else {
-			lazy, ok := result["lazy"]
-			// 判断是否存在lazy字段
-			if ok {
-				// 判断是否是bool类型
-				lazy, ok := lazy.(bool)
-				if !ok {
-					HandleError(errors.New("err"), "错误的字段类型，lazy必须bool类型")
-				}
-				// 如果是需要按需加载则交给后面的流程来处理
-				if lazy {
-					return
-				}
-			}
-			HandleError(err, "获取文件"+dirPath+"相对路径失败")
-			router.Component = "Page" + titleCase(routePath)
-		}
-		HandleError(err, "读取文件内容失败")
-	}
-}
-
-// 处理组件
-func handleIndexFile(file os.FileInfo, outputPath, dirPath, routePath string, router *Router, lazyImport bool) {
-
-	// fullName := filepath.Base(dirPath)
-	// extionName := filepath.Ext(fullName
-	// clearName := strings.TrimSuffix(fullName, extionName)
-
-	if file.Name() == "index.jsx" || file.Name() == "index.tsx" {
-		if router.Component == "" {
-
-			if lazyImport {
-
-				reletivePath, err := getRelativePath(outputPath, dirPath)
-				HandleError(err, "获取文件"+dirPath+"相对路径失败")
-				router.Component = "loadable(function(){return import('" + reletivePath + "')})"
-				ImportRoute = append(ImportRoute, "import Page"+titleCase(routePath)+" from '"+reletivePath+"/index';")
+			if router.Lazy {
+				router.Component = "lazy(() => import('" + router.RelativePath + "'))"
 			} else {
-
-				reletivePath, err := getRelativePath(outputPath, dirPath)
-				HandleError(err, "获取文件"+dirPath+"相对路径失败")
-				router.Component = "Page" + titleCase(routePath)
-				ImportRoute = append(ImportRoute, "import Page"+titleCase(routePath)+" from '"+reletivePath+"/index';")
+				router.Component = "Page" + titleCase(router.Path)
+				Import = append(Import, "import "+router.Component+" from "+router.RelativePath)
 			}
-		}
 
-		router.Path = "'" + routePath + "'"
+			childs = append(childs, router)
+		}
 	}
+
+	for _, child := range childs {
+		if child.Recursion {
+			child.Child = RecursionFile(child, Import)
+		}
+	}
+
+	return childs
 }
 
 // 处理错误

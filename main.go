@@ -44,13 +44,25 @@ func main() {
 					recursion = strings.ReplaceAll(recursion, "\\", "/")
 					parse.PathExistsIsDir(recursion)
 					filename := c.String("n")
-					lazyImport := c.Bool("i")
+					lazyImport := c.String("i")
 
 					// 先读取文件，用于判断路由信息是否发生变化，是否需要重新写入
 					f, _ := ioutil.ReadFile(filepath.Join(output, filename))
 
+					var router parse.Router
+					router.Recursion = true
+					// windows下文件路径可能会出现\\将其替换，统一为/
+					router.RealPath = filename
+					router.PathName = ""
+					router.Path = "/"
+					router.RelativePath, _ = parse.GetRelativePath(output, recursion)
+
+					router.Component = "Page"
+					var Import []string
+					Import = append(Import, "import "+router.Component+" from "+router.RelativePath)
+
 					// 解析路由
-					router := parse.RecursionFile(output, recursion, "", lazyImport)
+					router.Child = parse.RecursionFile(router, Import)
 
 					var routers []parse.Router
 
@@ -61,11 +73,11 @@ func main() {
 					parse.HandleError(err, "解析JSON出错")
 
 					// 导入loadable按需加载
-					parse.ImportRoute = append(parse.ImportRoute, "import loadable from '@loadable/component';\n")
+					Import = append(Import, lazyImport+"\n")
 
 					// 将数据写入buffer
 					var out bytes.Buffer
-					for _, importString := range parse.ImportRoute {
+					for _, importString := range Import {
 						// _, err = fmt.Fprintln(file, importString)
 						_, err := out.WriteString(importString + "\n")
 						parse.HandleError(err, "写入数据出错:"+importString)
@@ -118,10 +130,10 @@ func main() {
 						Usage:   "generate filename of router map table",
 					},
 					&cli.BoolFlag{
-						Name:    "lazyImport",
-						Value:   false,
-						Aliases: []string{"i"},
-						Usage:   "default lazy import compoennt",
+						Required: true,
+						Name:     "lazyImport",
+						Aliases:  []string{"i"},
+						Usage:    "default lazy import compoennt",
 					},
 				},
 			},
