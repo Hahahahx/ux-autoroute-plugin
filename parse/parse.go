@@ -11,7 +11,7 @@ import (
 
 type Router struct {
 	Component    string `json:"element"`
-	Handle       string `json:"handle"`
+	Handles      string `json:"handles"`
 	RelativePath string `json:"relative"`
 	AbsolutePath string `json:"absolute"`
 	Path         string `json:"path"`
@@ -57,7 +57,7 @@ func Parse(
 
 	var Import = []string{lazyImport}
 	Import = append(Import, ImportComponent(router.Component, router.RelativePath))
-	router.Handle = router.Component + "Handles.handles"
+	router.Handles = router.Component + "Handles.handles"
 	Import = append(Import, ImportComponentHandles(router.Component+"Handles", router.RelativePath))
 
 	// 解析路由
@@ -129,7 +129,7 @@ func RecursionFile(Father Router, Import []string) ([]Router, []string) {
 				Import = append(Import, ImportComponent(router.Component, router.RelativePath))
 			}
 
-			router.Handle = router.Component + "Handles.handles"
+			router.Handles = router.Component + "Handles.handles"
 			Import = append(Import, ImportComponentHandles(router.Component+"Handles", router.RelativePath))
 
 			childs = append(childs, router)

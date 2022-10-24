@@ -3,7 +3,7 @@
   "auther": {
     "name": "ux"
   },
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "自动路由",
   "repository": "https://github.com/Hahahahx/ux-autoroute-plugin",
   "main": "lib/index.js",
