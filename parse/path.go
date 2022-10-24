@@ -85,5 +85,5 @@ func ImportComponent(component, path string) string {
 }
 
 func ImportComponentHandles(component, path string) string {
-	return "import * as" + component + " from " + path + ";"
+	return "import * as " + component + " from " + path + ";"
 }

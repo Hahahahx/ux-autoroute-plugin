@@ -57,7 +57,8 @@ func Parse(
 
 	var Import = []string{lazyImport}
 	Import = append(Import, ImportComponent(router.Component, router.RelativePath))
-	Import = append(Import, ImportComponentHandles(router.Component, router.RelativePath))
+	router.Handle = router.Component + "Handles.handles"
+	Import = append(Import, ImportComponentHandles(router.Component+"Handles", router.RelativePath))
 
 	// 解析路由
 	router.Child, Import = RecursionFile(router, Import)
